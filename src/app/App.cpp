@@ -1,5 +1,7 @@
 #include "App.hpp"
 
+#include <iostream>
+
 App::App()
 {
     if (!SDL_Init(SDL_INIT_VIDEO))
@@ -14,14 +16,15 @@ App::App()
         return;
     }
 
-    const int linked = SDL_GetVersion();
-    std::cout << "SDL version: " << SDL_VERSIONNUM_MAJOR(linked) << "." << SDL_VERSIONNUM_MINOR(linked) << "." << SDL_VERSIONNUM_MICRO(linked) << std::endl;
-
     SDL_SetWindowRelativeMouseMode(m_window, true);
 
     SDL_SetRenderVSync(m_renderer, 1);
 
-    m_player = Player(m_window, m_renderer);
+    m_game.Init(m_window, m_renderer);
+
+    m_utils.Init(m_window, m_renderer);
+    m_utils.SetBaseWindowSize(1920 / 2, 1080 / 2);
+    m_utils.GetScaleFactor();
 
     m_lastTime = SDL_GetPerformanceCounter();
 
@@ -45,56 +48,66 @@ App::~App()
 
 void App::OnInput(SDL_Event *event)
 {
-    m_player.OnInput(event);
+    m_game.OnInput(event);
 }
 
 void App::OnUpdate(void)
 {
-    m_player.OnUpdate();
+    m_game.OnUpdate();
 }
 
 void App::OnRender(float alpha)
 {
-    m_player.OnRender(alpha);
+    m_game.OnRender(alpha);
 }
 
 void App::mainLoop(void)
 {
+    const float FRAME_TIME_ALPHA = 0.9f;  // Smoothing factor for frame time
+    float avgFrameTime = FIXED_TIME_STEP; // Running average of frame time
+
     while (SDL_PollEvent(&m_event))
     {
         if (m_event.type == SDL_EVENT_QUIT)
         {
             m_isRunning = false;
         }
-
         if (m_event.key.key == SDLK_ESCAPE)
         {
             SDL_SetWindowRelativeMouseMode(m_window, false);
         }
-
         if (m_event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && !SDL_GetWindowRelativeMouseMode(m_window))
         {
             SDL_SetWindowRelativeMouseMode(m_window, true);
         }
-
         OnInput(&m_event);
     }
 
-    // Time calculation
+    // Time calculation with smoothing
     Uint64 currentTime = SDL_GetPerformanceCounter();
     float elapsedTime = (currentTime - m_lastTime) / (float)SDL_GetPerformanceFrequency();
     m_lastTime = currentTime;
 
-    // Accumulate time
-    m_accumulatedTime += elapsedTime;
+    // Smooth out frame time to reduce jarring from sudden spikes
+    avgFrameTime = (FRAME_TIME_ALPHA * avgFrameTime) + ((1.0f - FRAME_TIME_ALPHA) * elapsedTime);
 
-    // Prevent accumulated time from growing too large
-    if (m_accumulatedTime > FIXED_TIME_STEP * 5.0f)
+    // Accumulate time using smoothed frame time
+    m_accumulatedTime += avgFrameTime;
+
+    // Dynamic time step limiting based on current performance
+    float maxAccumulatedTime = FIXED_TIME_STEP * 3.0f;
+    if (avgFrameTime > FIXED_TIME_STEP * 2.0f)
     {
-        m_accumulatedTime = FIXED_TIME_STEP * 5.0f;
+        // If we're running very slowly, allow more accumulated time
+        maxAccumulatedTime = FIXED_TIME_STEP * 5.0f;
     }
 
-    // Update game logic at fixed intervals
+    if (m_accumulatedTime > maxAccumulatedTime)
+    {
+        m_accumulatedTime = maxAccumulatedTime;
+    }
+
+    // Update game logic at fixed intervals with catch-up limiting
     int updateCount = 0;
     while (m_accumulatedTime >= FIXED_TIME_STEP && updateCount < MAX_UPDATES_PER_FRAME)
     {
@@ -103,8 +116,12 @@ void App::mainLoop(void)
         updateCount++;
     }
 
+    // Improved interpolation calculation
     float interpolation = m_accumulatedTime / FIXED_TIME_STEP;
-    if (interpolation > 1.0f)
+    interpolation = std::min(std::max(interpolation, 0.0f), 1.0f);
+
+    // If we're dropping frames, adjust interpolation to smooth movement
+    if (updateCount >= MAX_UPDATES_PER_FRAME && m_accumulatedTime >= FIXED_TIME_STEP)
     {
         interpolation = 1.0f;
     }
@@ -114,6 +131,13 @@ void App::mainLoop(void)
     SDL_RenderClear(m_renderer);
     OnRender(interpolation);
     SDL_RenderPresent(m_renderer);
+
+    const float TARGET_FRAME_TIME = 1.0f / TARGET_FPS;
+    float remainingTime = TARGET_FRAME_TIME - elapsedTime;
+    if (remainingTime > 0)
+    {
+        SDL_Delay((Uint32)(remainingTime * 1000));
+    }
 }
 
 void App::MainLoopHelper(void *data)

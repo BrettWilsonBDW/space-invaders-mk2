@@ -4,17 +4,25 @@
 
 Player::Player(SDL_Window *window, SDL_Renderer *renderer) : Entities(window, renderer)
 {
-    int width, height;
-    SDL_GetWindowSize(window, &width, &height);
-
-    std::cout << "Window size: " << width << "x" << height << std::endl;
     SetRect({100, 0, 100, 100});
 
-    SetPosition({(static_cast<float>(width) / 2) - 50, static_cast<float>(height) - 100});
+    SetPosition({(static_cast<float>(GetWindowWidth()) / 2) - 50, static_cast<float>(GetWindowHeight()) - 100});
+
+    for (int i = 0; i < 20; i++)
+    {
+        m_bullets.push_back(Bullet(window, renderer));
+    }
 }
 
 Player::~Player()
 {
+    for (auto &enemy : m_enemies)
+    {
+        if (enemy != nullptr)
+        {
+            delete enemy;
+        }
+    }
 }
 
 void Player::OnUpdate()
@@ -23,28 +31,85 @@ void Player::OnUpdate()
 
     Vector2 vel = {0, 0};
 
-    float speed{35000};
+    float speed{45000};
 
-    speed =  speed * (1.0f / 60.0f);
+    speed = speed * (1.0f / 60.0f);
 
-    if (keyW)
+    // left
+    if (keyA && !leftLock)
     {
-        vel.y -= speed; // up
+        rightLock = false;
+        vel.x -= speed;
     }
-    if (keyS)
+    // right
+    if (keyD && !rightLock)
     {
-        vel.y += speed; // down
-    }
-    if (keyA)
-    {
-        vel.x -= speed; // left
-    }
-    if (keyD)
-    {
-        vel.x += speed; // right
+        leftLock = false;
+        vel.x += speed;
     }
 
-    SetVelocity(vel);
+    float scaleFactor = GetScaleFactor();
+
+    // left
+    if (GetRect().x * scaleFactor < 0)
+    {
+        leftLock = true;
+        SetPosition({0, GetRect().y / scaleFactor});
+    }
+
+    // right
+    if (((GetRect().x) + GetRect().w) > GetWindowWidth())
+    {
+        rightLock = true;
+        SetPosition({((float)GetWindowWidth() - (GetRect().w)) / scaleFactor, GetRect().y / scaleFactor});
+    }
+
+    SetVelocity(vel, speed);
+
+    for (auto &bullet : m_bullets)
+    {
+        bullet.OnUpdate();
+    }
+
+    if (keySpace && m_fireCooldown <= 0)
+    {
+        m_fireCooldown = 20;
+
+        if (!m_bullets[m_bulletCount].GetActive())
+        {
+            m_bullets[m_bulletCount].SetActive(true);
+            m_bullets[m_bulletCount].SetPosition({GetRect().x + GetRect().w / 2, GetRect().y});
+
+            m_bulletCount++;
+
+            if (m_bulletCount >= m_bullets.size())
+            {
+                m_bulletCount = 0;
+            }
+        }
+
+        keySpace = false;
+    }
+
+    m_fireCooldown -= 1;
+
+    for (auto &bullet : m_bullets)
+    {
+        for (auto &enemy : m_enemies)
+        {
+            if (bullet.CheckCollisions(bullet.GetRect(), enemy->GetRect()))
+            {
+                bullet.SetActive(false);
+                bullet.SetPosition({GetRect().x + GetRect().w / 2, GetRect().y});
+            }
+
+            if (bullet.GetRect().y < 0)
+            {
+                bullet.SetActive(false);
+                bullet.SetPosition({GetRect().x + GetRect().w / 2, GetRect().y});
+            }
+        }
+    }
 }
 
 void Player::OnInput(SDL_Event *event)
@@ -52,21 +117,36 @@ void Player::OnInput(SDL_Event *event)
     if (event->type == SDL_EVENT_KEY_DOWN || event->type == SDL_EVENT_KEY_UP)
     {
         bool isPressed = (event->type == SDL_EVENT_KEY_DOWN);
-        
+
         switch (event->key.key)
         {
-            case SDLK_W:
-                keyW = isPressed;
-                break;
-            case SDLK_A:
-                keyA = isPressed;
-                break;
-            case SDLK_S:
-                keyS = isPressed;
-                break;
-            case SDLK_D:
-                keyD = isPressed;
-                break;
+        case SDLK_W:
+            keyW = isPressed;
+            break;
+        case SDLK_A:
+            keyA = isPressed;
+            break;
+        case SDLK_S:
+            keyS = isPressed;
+            break;
+        case SDLK_D:
+            keyD = isPressed;
+            break;
+        case SDLK_SPACE:
+            keySpace = isPressed;
+            break;
+        default:
+            break;
         }
+    }
+}
+
+void Player::OnRender(float alpha)
+{
+    Entities::OnRender(alpha);
+
+    for (auto &bullet : m_bullets)
+    {
+        bullet.OnRender(alpha);
     }
 }
