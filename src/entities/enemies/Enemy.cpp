@@ -4,12 +4,48 @@
 
 Enemy::Enemy(SDL_Window *window, SDL_Renderer *renderer) : Entities(window, renderer)
 {
-    int width, height;
-    SDL_GetWindowSize(window, &width, &height);
+    for (int i = 0; i < 1; i++)
+    {
+        m_bullets.push_back(Bullet(window, renderer));
+        m_bullets[i].SwapDirection();
+    }
 }
 
 Enemy::~Enemy()
 {
+}
+
+void Enemy::ShootBullets()
+{
+    if (m_fired)
+    {
+        m_fired = false;
+        for (auto &bullet : m_bullets)
+        {
+            bullet.SetActive(true);
+            m_bullets[0].SetPosition({GetRect().x + GetRect().w / 2, GetRect().y});
+        }
+    }
+
+    for (auto &bullet : m_bullets)
+    {
+        if (!bullet.GetActive())
+        {
+            bullet.SetPosition({GetRect().x + GetRect().w / 2, GetRect().y});
+        }
+
+        if (bullet.CheckCollisions(bullet.GetRect(), m_player->GetRect()))
+        {
+            bullet.SetActive(false);
+            firedOnce = false;
+        }
+
+        if (bullet.GetRect().y > GetWindowHeight())
+        {
+            bullet.SetActive(false);
+            firedOnce = false;
+        }
+    }
 }
 
 void Enemy::MoveThroughTrajectories()
@@ -52,9 +88,33 @@ void Enemy::MoveThroughTrajectories()
     }
 }
 
-void Enemy::OnUpdate()
+void Enemy::OnUpdate(float dt)
 {
-    Entities::OnUpdate();
+    Entities::OnUpdate(dt);
+
+    for (auto &bullet : m_bullets)
+    {
+        bullet.OnUpdate(dt);
+    }
+
+    ShootBullets();
+
+    if (!m_active)
+    {
+        SetPosition({0, static_cast<float>(-GetWindowHeight())});
+        SetVelocity({0, 0}, 0);
+        return;
+    }
 
     MoveThroughTrajectories();
+}
+
+void Enemy::OnRender(float alpha)
+{
+    Entities::OnRender(alpha);
+
+    for (auto &bullet : m_bullets)
+    {
+        bullet.OnRender(alpha);
+    }
 }

@@ -8,7 +8,7 @@ Player::Player(SDL_Window *window, SDL_Renderer *renderer) : Entities(window, re
 
     SetPosition({(static_cast<float>(GetWindowWidth()) / 2) - 50, static_cast<float>(GetWindowHeight()) - 100});
 
-    for (int i = 0; i < 20; i++)
+    for (int i = 0; i < 3; i++)
     {
         m_bullets.push_back(Bullet(window, renderer));
     }
@@ -25,9 +25,9 @@ Player::~Player()
     }
 }
 
-void Player::OnUpdate()
+void Player::OnUpdate(float dt)
 {
-    Entities::OnUpdate();
+    Entities::OnUpdate(dt);
 
     Vector2 vel = {0, 0};
 
@@ -68,7 +68,7 @@ void Player::OnUpdate()
 
     for (auto &bullet : m_bullets)
     {
-        bullet.OnUpdate();
+        bullet.OnUpdate(dt);
     }
 
     if (keySpace && m_fireCooldown <= 0)
@@ -78,7 +78,7 @@ void Player::OnUpdate()
         if (!m_bullets[m_bulletCount].GetActive())
         {
             m_bullets[m_bulletCount].SetActive(true);
-            m_bullets[m_bulletCount].SetPosition({GetRect().x + GetRect().w / 2, GetRect().y});
+            m_bullets[m_bulletCount].SetPosition({(GetRect().x + GetRect().w / 2) / scaleFactor, GetRect().y / scaleFactor});
 
             m_bulletCount++;
 
@@ -95,18 +95,23 @@ void Player::OnUpdate()
 
     for (auto &bullet : m_bullets)
     {
+        if (!bullet.GetActive())
+        {
+            // bullet.SetPosition({GetRect().x + GetRect().w / 2, GetRect().y});
+            bullet.SetPosition({(GetRect().x + GetRect().w / 2) / scaleFactor, GetRect().y / scaleFactor});
+        }
+
         for (auto &enemy : m_enemies)
         {
             if (bullet.CheckCollisions(bullet.GetRect(), enemy->GetRect()))
             {
                 bullet.SetActive(false);
-                bullet.SetPosition({GetRect().x + GetRect().w / 2, GetRect().y});
+                enemy->SetActive(false);
             }
 
             if (bullet.GetRect().y < 0)
             {
                 bullet.SetActive(false);
-                bullet.SetPosition({GetRect().x + GetRect().w / 2, GetRect().y});
             }
         }
     }

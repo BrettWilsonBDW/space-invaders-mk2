@@ -21,9 +21,9 @@ void Game::OnInput(SDL_Event *event)
     m_levels->OnInput(event);
 }
 
-void Game::OnUpdate(void)
+void Game::OnUpdate(float dt)
 {
-    m_levels->OnUpdate();
+    m_levels->OnUpdate(dt);
 }
 
 void Game::OnRender(float alpha)

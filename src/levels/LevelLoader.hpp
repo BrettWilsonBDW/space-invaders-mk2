@@ -4,7 +4,7 @@
 #include "../entities/bullet/Bullet.hpp"
 
 #include "../entities/player/Player.hpp"
-#include "../levels/Levels.hpp"
+// #include "../levels/Levels.hpp"
 
 #include <vector>
 
@@ -29,7 +29,7 @@ public:
         return height;
     }
 
-    void OnUpdate();
+    void OnUpdate(float dt);
     void OnInput(SDL_Event *event);
     void OnRender(float alpha);
 
@@ -37,6 +37,14 @@ private:
     SDL_Window *m_window = nullptr;
     SDL_Renderer *m_renderer = nullptr;
 
-    std::vector<Enemy*> m_enemies;
-    Player m_player = Player(m_window, m_renderer);
+    std::vector<Enemy *> m_enemies;
+    // Player m_player = Player(m_window, m_renderer);
+    Player *m_player = nullptr;
+
+    // std::vector<Bullet> m_bullets;
+
+    SDL_FRect* playerRectPtr = nullptr;
+
+    int m_currentFiringEnemy{0};
+    bool m_canFire{true};
 };

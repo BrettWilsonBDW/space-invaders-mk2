@@ -2,7 +2,7 @@
 
 #include "SDL3/SDL.h"
 
-#include "../../levels/Levels.hpp"
+#include "../../levels/LevelLoader.hpp"
 
 class Game
 {
@@ -13,7 +13,7 @@ public:
     void Init(SDL_Window *window, SDL_Renderer *renderer);
 
     void OnInput(SDL_Event *event);
-    void OnUpdate();
+    void OnUpdate(float dt);
     void OnRender(float alpha);
 private:
     SDL_Window *m_window = nullptr;

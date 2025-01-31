@@ -6,7 +6,7 @@ Bullet::Bullet(SDL_Window *window, SDL_Renderer *renderer) : Entities(window, re
 {
     SetRect({100, 0, 5, 10});
 
-    SetPosition({(static_cast<float>(GetWindowWidth()) / 2) - 50, static_cast<float>(GetWindowHeight()) - 100});
+    SetPosition({0, 0});
 }
 
 Bullet::~Bullet()
@@ -15,24 +15,29 @@ Bullet::~Bullet()
 
 bool Bullet::CheckCollisions(SDL_FRect a, SDL_FRect b)
 {
+    if (!m_active)
+    {
+        return false;
+    }
+
     return (a.x < b.x + b.w &&
             a.x + a.w > b.x &&
             a.y < b.y + b.h &&
             a.y + a.h > b.y);
 }
 
-void Bullet::OnUpdate()
+void Bullet::OnUpdate(float dt)
 {
-    if (!m_active)
-    {
-        SetVelocity({0, 0}, 0);
-    }
+    // if (!m_active)
+    // {
+    //     SetVelocity({0, 0}, 0);
+    // }
 
-    Entities::OnUpdate();
+    Entities::OnUpdate(dt);
 
     Vector2 vel = {0, 0};
 
-    float speed{20000};
+    float speed{40000};
 
     speed = speed * (1.0f / 60.0f);
 
@@ -46,9 +51,15 @@ void Bullet::OnUpdate()
     }
 
     SetVelocity(vel, speed);
+
+    if (!m_active)
+    {
+        SetVelocity({0, 0}, 0);
+    }
 }
 
 void Bullet::OnRender(float alpha)
 {
     Entities::OnRender(alpha, !m_active);
+    // Entities::OnRender(alpha);
 }

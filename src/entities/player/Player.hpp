@@ -21,9 +21,7 @@ public:
 
     void SetEnemies(Enemy* enemies) { m_enemies.push_back(enemies);}
 
-    void CheckCollisions();
-
-    void OnUpdate();
+    void OnUpdate(float dt);
     void OnInput(SDL_Event *event);
     void OnRender(float alpha);
 private:

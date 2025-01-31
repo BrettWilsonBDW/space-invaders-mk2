@@ -40,7 +40,6 @@ public:
         velocity.y *= speed;
 
         m_velocity = velocity;
-        
     }
 
     SDL_FRect GetRect() { return m_rect; }
@@ -59,10 +58,8 @@ public:
     }
 
     float GetScaleFactor() { return m_scaleFactor; }
-
-    void CheckCollisions();
     
-    void OnUpdate();
+    void OnUpdate(float dt);
     void OnRender(float alpha, bool entityVisible = false);
 
 private:
@@ -81,6 +78,9 @@ private:
 
     Vector2 m_previousPosition{};
     Vector2 m_currentPosition{};
+
+    Vector2 HermiteInterpolation(const Vector2& p0, const Vector2& p1, const Vector2& v0, const Vector2& v1, float t);
+    float m_accumulatedTime{};
 
     void RenderSprite(const Vector2 &position);
 };

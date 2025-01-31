@@ -17,7 +17,7 @@ public:
 
     bool CheckCollisions(SDL_FRect a, SDL_FRect b);
 
-    void OnUpdate();
+    void OnUpdate(float dt);
     void OnRender(float alpha);
 private:
     bool m_direction{};

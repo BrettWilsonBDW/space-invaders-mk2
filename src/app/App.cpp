@@ -1,6 +1,40 @@
 #include "App.hpp"
 
 #include <iostream>
+#include <algorithm>
+
+#ifdef __EMSCRIPTEN__
+EM_JS(int, getBrowserWidth, (), {
+    return window.innerWidth;
+});
+
+EM_JS(int, getBrowserHeight, (), {
+    return window.innerHeight;
+});
+
+extern "C"
+{
+    void rotateCanvasIfNeeded()
+    {
+        int width = getBrowserWidth();
+        int height = getBrowserHeight();
+
+        // Get the canvas element and adjust it based on orientation
+        EM_ASM({
+            var canvas = document.getElementById('canvas');
+            console.log('Checking rotation');
+            if ($0 < $1) {
+                canvas.style.transform = 'rotate(90deg)';
+                canvas.width = $1;  // Adjust canvas dimensions for the rotation
+                canvas.height = $0;
+            } else {
+                canvas.style.transform = 'rotate(0deg)';
+                canvas.width = $0;
+                canvas.height = $1;
+            } }, width, height);
+    }
+}
+#endif
 
 App::App()
 {
@@ -10,15 +44,13 @@ App::App()
         return;
     }
 
-    if (!SDL_CreateWindowAndRenderer("Hello SDL", 1920 / 2, 1080 / 2, SDL_WINDOW_RESIZABLE, &m_window, &m_renderer))
+    if (!SDL_CreateWindowAndRenderer("Space Invaders Clone MK2", 1920 / 2, 1080 / 2, 0, &m_window, &m_renderer))
     {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create window and renderer: %s", SDL_GetError());
         return;
     }
 
     SDL_SetWindowRelativeMouseMode(m_window, true);
-
-    SDL_SetRenderVSync(m_renderer, 1);
 
     m_game.Init(m_window, m_renderer);
 
@@ -27,13 +59,29 @@ App::App()
     m_utils.GetScaleFactor();
 
     m_lastTime = SDL_GetPerformanceCounter();
+    m_frequency = (float)SDL_GetPerformanceFrequency();
+
+    // SDL_SetWindowFullscreen(m_window, true);
 
 #ifdef __EMSCRIPTEN__
+    SDL_SetRenderVSync(m_renderer, 1);
     emscripten_set_main_loop_arg(MainLoopHelper, this, 0, 1);
 #else
     while (m_isRunning)
     {
+        Uint64 frameStartTime = SDL_GetPerformanceCounter();
+        const Uint64 frameTime = m_frequency / (m_frameRate); // Target time for 60 FPS
+
         mainLoop();
+
+        Uint64 frameEndTime = SDL_GetPerformanceCounter();
+        Uint64 frameDuration = frameEndTime - frameStartTime;
+
+        if (frameDuration < frameTime)
+        {
+            Uint64 waitTime = frameTime - frameDuration;
+            SDL_DelayNS(waitTime);
+        }
     }
 #endif
 }
@@ -51,9 +99,9 @@ void App::OnInput(SDL_Event *event)
     m_game.OnInput(event);
 }
 
-void App::OnUpdate(void)
+void App::OnUpdate(float elapsedTime)
 {
-    m_game.OnUpdate();
+    m_game.OnUpdate(elapsedTime);
 }
 
 void App::OnRender(float alpha)
@@ -63,8 +111,14 @@ void App::OnRender(float alpha)
 
 void App::mainLoop(void)
 {
-    const float FRAME_TIME_ALPHA = 0.9f;  // Smoothing factor for frame time
-    float avgFrameTime = FIXED_TIME_STEP; // Running average of frame time
+#ifdef __EMSCRIPTEN__
+    rotateCanvasIfNeeded();
+#endif
+
+    // Fixed timestep based on https://gafferongames.com/post/fix_your_timestep/
+    Uint64 currentTime = SDL_GetPerformanceCounter();
+    float elapsedTime = (currentTime - m_lastTime) / static_cast<float>(m_frequency);
+    m_lastTime = currentTime;
 
     while (SDL_PollEvent(&m_event))
     {
@@ -72,72 +126,44 @@ void App::mainLoop(void)
         {
             m_isRunning = false;
         }
-        if (m_event.key.key == SDLK_ESCAPE)
+        else if (m_event.key.key == SDLK_ESCAPE)
         {
             SDL_SetWindowRelativeMouseMode(m_window, false);
+            m_paused = 0;
         }
-        if (m_event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && !SDL_GetWindowRelativeMouseMode(m_window))
+        else if (m_event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && !SDL_GetWindowRelativeMouseMode(m_window))
         {
             SDL_SetWindowRelativeMouseMode(m_window, true);
+            m_paused = 1;
         }
+
         OnInput(&m_event);
     }
 
-    // Time calculation with smoothing
-    Uint64 currentTime = SDL_GetPerformanceCounter();
-    float elapsedTime = (currentTime - m_lastTime) / (float)SDL_GetPerformanceFrequency();
-    m_lastTime = currentTime;
-
-    // Smooth out frame time to reduce jarring from sudden spikes
-    avgFrameTime = (FRAME_TIME_ALPHA * avgFrameTime) + ((1.0f - FRAME_TIME_ALPHA) * elapsedTime);
-
     // Accumulate time using smoothed frame time
-    m_accumulatedTime += avgFrameTime;
-
-    // Dynamic time step limiting based on current performance
-    float maxAccumulatedTime = FIXED_TIME_STEP * 3.0f;
-    if (avgFrameTime > FIXED_TIME_STEP * 2.0f)
-    {
-        // If we're running very slowly, allow more accumulated time
-        maxAccumulatedTime = FIXED_TIME_STEP * 5.0f;
-    }
-
-    if (m_accumulatedTime > maxAccumulatedTime)
-    {
-        m_accumulatedTime = maxAccumulatedTime;
-    }
+    m_accumulatedTime = std::min(m_accumulatedTime + elapsedTime, FIXED_TIME_STEP * 5.0f); // Cap accumulated time
 
     // Update game logic at fixed intervals with catch-up limiting
     int updateCount = 0;
-    while (m_accumulatedTime >= FIXED_TIME_STEP && updateCount < MAX_UPDATES_PER_FRAME)
+    while (m_accumulatedTime >= FIXED_TIME_STEP && updateCount <= 5)
     {
-        OnUpdate();
+        OnUpdate(FIXED_TIME_STEP * m_paused);
         m_accumulatedTime -= FIXED_TIME_STEP;
         updateCount++;
+
+        if (updateCount > 5)
+        {
+            break;
+        }
     }
 
-    // Improved interpolation calculation
-    float interpolation = m_accumulatedTime / FIXED_TIME_STEP;
-    interpolation = std::min(std::max(interpolation, 0.0f), 1.0f);
-
-    // If we're dropping frames, adjust interpolation to smooth movement
-    if (updateCount >= MAX_UPDATES_PER_FRAME && m_accumulatedTime >= FIXED_TIME_STEP)
-    {
-        interpolation = 1.0f;
-    }
+    float alpha = std::clamp(m_accumulatedTime / FIXED_TIME_STEP, 0.0f, 1.0f);
 
     // Render
     SDL_SetRenderDrawColor(m_renderer, 0x00, 0x00, 0x00, 0x00);
     SDL_RenderClear(m_renderer);
-    OnRender(interpolation);
+    OnRender(alpha);
     SDL_RenderPresent(m_renderer);
-
-    const float TARGET_FRAME_TIME = 1.0f / TARGET_FPS;
-    float remainingTime = TARGET_FRAME_TIME - elapsedTime;
-    if (remainingTime > 0)
-    {
-        SDL_Delay((Uint32)(remainingTime * 1000));
-    }
 }
 
 void App::MainLoopHelper(void *data)
