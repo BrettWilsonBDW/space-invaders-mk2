@@ -6,6 +6,8 @@ Player::Player(SDL_Window *window, SDL_Renderer *renderer) : Entities(window, re
 {
     SetRect({100, 0, 100, 100});
 
+    m_currentHealth = 3;
+
     SetPosition({(static_cast<float>(GetWindowWidth()) / 2) - 50, static_cast<float>(GetWindowHeight()) - 100});
 
     for (int i = 0; i < 3; i++)
@@ -97,7 +99,6 @@ void Player::OnUpdate(float dt)
     {
         if (!bullet.GetActive())
         {
-            // bullet.SetPosition({GetRect().x + GetRect().w / 2, GetRect().y});
             bullet.SetPosition({(GetRect().x + GetRect().w / 2) / scaleFactor, GetRect().y / scaleFactor});
         }
 
@@ -115,6 +116,18 @@ void Player::OnUpdate(float dt)
             }
         }
     }
+
+    if (GetStatus())
+    {
+        m_currentHealth--;
+        SetStatus(false);
+    }
+
+    if (m_currentHealth == 0)
+    {
+        SetActive(false);
+    }
+    
 }
 
 void Player::OnInput(SDL_Event *event)
@@ -148,7 +161,7 @@ void Player::OnInput(SDL_Event *event)
 
 void Player::OnRender(float alpha)
 {
-    Entities::OnRender(alpha);
+    Entities::OnRender(alpha, !GetActive());
 
     for (auto &bullet : m_bullets)
     {

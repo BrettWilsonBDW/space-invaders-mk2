@@ -40,4 +40,5 @@ private:
 
     int m_bulletCount{};
     int m_fireCooldown{};
+    int m_currentHealth{};
 };

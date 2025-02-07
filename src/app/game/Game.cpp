@@ -13,20 +13,20 @@ void Game::Init(SDL_Window *window, SDL_Renderer *renderer)
     m_window = window;
     m_renderer = renderer;
 
-    m_levels = std::make_unique<Levels>(m_window, m_renderer);
+    m_levelLoader = std::make_unique<LevelLoader>(m_window, m_renderer);
 }
 
 void Game::OnInput(SDL_Event *event)
 {
-    m_levels->OnInput(event);
+    m_levelLoader->OnInput(event);
 }
 
 void Game::OnUpdate(float dt)
 {
-    m_levels->OnUpdate(dt);
+    m_levelLoader->OnUpdate(dt);
 }
 
 void Game::OnRender(float alpha)
 {
-    m_levels->OnRender(alpha);
+    m_levelLoader->OnRender(alpha);
 }

@@ -11,17 +11,13 @@ public:
     ~Bullet();
 
     void SwapDirection() { m_direction = !m_direction; }
-    void SetActive(bool active) { m_active = active; }
-
-    bool GetActive() { return m_active; }
-
+    
     bool CheckCollisions(SDL_FRect a, SDL_FRect b);
 
     void OnUpdate(float dt);
     void OnRender(float alpha);
 private:
     bool m_direction{};
-    bool m_active{};
 };
 
 

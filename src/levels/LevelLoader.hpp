@@ -4,17 +4,41 @@
 #include "../entities/bullet/Bullet.hpp"
 
 #include "../entities/player/Player.hpp"
-// #include "../levels/Levels.hpp"
+
+#include "levelData/LevelData.hpp"
 
 #include <vector>
 
-class Levels
+class LevelLoader
 {
 public:
-    Levels(SDL_Window *window, SDL_Renderer *renderer);
-    ~Levels();
+    LevelLoader(SDL_Window *window, SDL_Renderer *renderer);
+    ~LevelLoader();
 
-    Levels();
+    LevelLoader();
+
+    void OnUpdate(float dt);
+    void OnInput(SDL_Event *event);
+    void OnRender(float alpha);
+
+private:
+    SDL_Window *m_window = nullptr;
+    SDL_Renderer *m_renderer = nullptr;
+
+    Player *m_player = nullptr;
+    LevelData m_levelData{};
+
+    int m_currentFiringEnemy{0};
+    bool m_canFire{true};
+
+    std::vector<Enemy *> m_enemies;
+
+    int levelNum{0};
+    int currentLevel{0};
+
+    void UpdateEnemies(float dt);
+
+    void LoadLevel(int level);
 
     int GetWindowWidth()
     {
@@ -28,23 +52,4 @@ public:
         SDL_GetWindowSize(m_window, nullptr, &height);
         return height;
     }
-
-    void OnUpdate(float dt);
-    void OnInput(SDL_Event *event);
-    void OnRender(float alpha);
-
-private:
-    SDL_Window *m_window = nullptr;
-    SDL_Renderer *m_renderer = nullptr;
-
-    std::vector<Enemy *> m_enemies;
-    // Player m_player = Player(m_window, m_renderer);
-    Player *m_player = nullptr;
-
-    // std::vector<Bullet> m_bullets;
-
-    SDL_FRect* playerRectPtr = nullptr;
-
-    int m_currentFiringEnemy{0};
-    bool m_canFire{true};
 };

@@ -16,10 +16,8 @@ public:
 
     void SetId(int id) { m_id = id; }
     void SetSpeed(float speed) { m_speed = speed; }
-    void SetActive(bool active) { m_active = active; }
     void SetPlayer(Entities *player) { m_player = player; }
     void SetTrajectory(std::vector<Vector2> trajectory) { m_trajectory = trajectory; }
-    bool GetActive() { return m_active; }
     bool GetCanFire() { return firedOnce; }
     
     void FireBullet() { if (!firedOnce) {m_fired = true; firedOnce = true;} }
@@ -30,7 +28,6 @@ private:
     std::vector<Vector2> m_trajectory{};
     int m_trajectoryIndex{};
     float m_speed{};
-    bool m_active{true};
     std::vector<Bullet> m_bullets;
     bool m_fired{};
     bool firedOnce{};

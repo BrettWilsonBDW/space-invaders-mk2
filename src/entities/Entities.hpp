@@ -42,6 +42,10 @@ public:
         m_velocity = velocity;
     }
 
+    void SetStatus(bool status) { m_status = status; }
+
+    void SetActive(bool active) { m_active = active; }
+
     SDL_FRect GetRect() { return m_rect; }
 
     int GetWindowWidth()
@@ -58,6 +62,10 @@ public:
     }
 
     float GetScaleFactor() { return m_scaleFactor; }
+
+    bool GetStatus() { return m_status; }
+
+    bool GetActive() { return m_active; }
     
     void OnUpdate(float dt);
     void OnRender(float alpha, bool entityVisible = false);
@@ -79,8 +87,9 @@ private:
     Vector2 m_previousPosition{};
     Vector2 m_currentPosition{};
 
-    Vector2 HermiteInterpolation(const Vector2& p0, const Vector2& p1, const Vector2& v0, const Vector2& v1, float t);
-    float m_accumulatedTime{};
+    bool m_status{};
 
     void RenderSprite(const Vector2 &position);
+
+    bool m_active{true};
 };

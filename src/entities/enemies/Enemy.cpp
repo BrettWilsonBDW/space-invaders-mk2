@@ -38,6 +38,8 @@ void Enemy::ShootBullets()
         {
             bullet.SetActive(false);
             firedOnce = false;
+
+            m_player->SetStatus(true);
         }
 
         if (bullet.GetRect().y > GetWindowHeight())
@@ -99,7 +101,7 @@ void Enemy::OnUpdate(float dt)
 
     ShootBullets();
 
-    if (!m_active)
+    if (!GetActive())
     {
         SetPosition({0, static_cast<float>(-GetWindowHeight())});
         SetVelocity({0, 0}, 0);

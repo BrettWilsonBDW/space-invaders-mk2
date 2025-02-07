@@ -19,7 +19,7 @@ private:
     SDL_Window *m_window = nullptr;
     SDL_Renderer *m_renderer = nullptr;
 
-    std::unique_ptr<Levels> m_levels;
+    std::unique_ptr<LevelLoader> m_levelLoader;
 };
 
 
