@@ -21,6 +21,8 @@ public:
 
     void SetEnemies(Enemy* enemies) { m_enemies.push_back(enemies);}
 
+    int GetHealth() { return m_currentHealth; }
+
     void OnUpdate(float dt);
     void OnInput(SDL_Event *event);
     void OnRender(float alpha);

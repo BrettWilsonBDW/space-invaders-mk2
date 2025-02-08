@@ -4,6 +4,7 @@
 
 Bullet::Bullet(SDL_Window *window, SDL_Renderer *renderer) : Entities(window, renderer)
 {
+    SetTexture("bullet.png");
     SetRect({100, 0, 5, 10});
 
     SetPosition({0, 0});

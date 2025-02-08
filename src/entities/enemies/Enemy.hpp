@@ -34,8 +34,6 @@ private:
 
     int m_id{};
 
-    SDL_FRect *m_playerRect{};
-
     Entities *m_player;
 
     void ShootBullets();

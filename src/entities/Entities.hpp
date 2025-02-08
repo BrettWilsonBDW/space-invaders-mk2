@@ -46,19 +46,17 @@ public:
 
     void SetActive(bool active) { m_active = active; }
 
+    void SetTexture(std::string name) { m_texture = Utils::GetInstance().GetTexture(name); }
+
     SDL_FRect GetRect() { return m_rect; }
 
     int GetWindowWidth()
     {
-        int width;
-        SDL_GetWindowSize(m_window, &width, nullptr);
-        return width;
+        return m_utils->GetWindowWidth();
     }
     int GetWindowHeight()
     {
-        int height;
-        SDL_GetWindowSize(m_window, nullptr, &height);
-        return height;
+        return m_utils->GetWindowHeight();
     }
 
     float GetScaleFactor() { return m_scaleFactor; }
@@ -66,7 +64,7 @@ public:
     bool GetStatus() { return m_status; }
 
     bool GetActive() { return m_active; }
-    
+
     void OnUpdate(float dt);
     void OnRender(float alpha, bool entityVisible = false);
 
@@ -82,8 +80,6 @@ private:
     SDL_FRect m_OriginalRect{};
 
     Vector2 m_velocity{};
-    float FIXED_TIME_STEP = 1.0f / 60.0f;
-
     Vector2 m_previousPosition{};
     Vector2 m_currentPosition{};
 
@@ -92,4 +88,6 @@ private:
     void RenderSprite(const Vector2 &position);
 
     bool m_active{true};
+
+    SDL_Texture *m_texture{nullptr};
 };

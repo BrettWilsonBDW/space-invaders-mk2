@@ -2,6 +2,8 @@
 
 #include <SDL3/SDL.h>
 
+#include "../imageManager/ImageManager.hpp"
+
 class Utils
 {
 public:
@@ -21,14 +23,37 @@ public:
         m_window = window;
         m_renderer = renderer;
         m_initialized = true;
+
+        imageManager.SetSDLWindow(m_window);
+
+        imageManager.LoadAllImagesFromPath("./assets");
     }
 
-    void SetBaseWindowSize(int width, int height) { m_baseWindowWidth = width; m_baseWindowHeight = height; }
+    void SetBaseWindowSize(int width, int height)
+    {
+        m_baseWindowWidth = width;
+        m_baseWindowHeight = height;
+    }
 
     float GetScaleFactor()
     {
         CalculateScaleFactor(m_baseWindowWidth, m_baseWindowHeight);
         return m_scaleFactor;
+    }
+
+    SDL_Texture *GetTexture(std::string name) { return imageManager.GetTexture(name); }
+
+    int GetWindowWidth()
+    {
+        int width;
+        SDL_GetWindowSize(m_window, &width, nullptr);
+        return width;
+    }
+    int GetWindowHeight()
+    {
+        int height;
+        SDL_GetWindowSize(m_window, nullptr, &height);
+        return height;
     }
 
 private:
@@ -41,6 +66,8 @@ private:
 
     SDL_Window *m_window;
     SDL_Renderer *m_renderer;
+
+    ImageManager imageManager;
 
     int m_baseWindowWidth{};
     int m_baseWindowHeight{};

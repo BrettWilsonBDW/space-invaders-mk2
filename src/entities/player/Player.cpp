@@ -4,6 +4,8 @@
 
 Player::Player(SDL_Window *window, SDL_Renderer *renderer) : Entities(window, renderer)
 {
+    SetTexture("playership.png");
+
     SetRect({100, 0, 100, 100});
 
     m_currentHealth = 3;
@@ -127,7 +129,6 @@ void Player::OnUpdate(float dt)
     {
         SetActive(false);
     }
-    
 }
 
 void Player::OnInput(SDL_Event *event)

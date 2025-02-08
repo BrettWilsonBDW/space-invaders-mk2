@@ -6,8 +6,6 @@ LevelLoader::LevelLoader() {}
 
 LevelLoader::LevelLoader(SDL_Window *window, SDL_Renderer *renderer) : m_window(window), m_renderer(renderer)
 {
-    m_player = new Player(m_window, m_renderer);
-
     LoadLevel(0);
 }
 
@@ -23,6 +21,10 @@ LevelLoader::~LevelLoader()
 
 void LevelLoader::LoadLevel(int level)
 {
+    delete m_player;
+
+    m_player = new Player(m_window, m_renderer);
+
     m_enemies.clear();
 
     const float enemyWidth = m_levelData.GetLevelData(level).width;
@@ -43,10 +45,10 @@ void LevelLoader::LoadLevel(int level)
         m_enemies.push_back(new Enemy(m_window, m_renderer));
         m_enemies[i]->SetId(i);
         m_enemies[i]->SetRect({displacement, 0, enemyWidth, enemyWidth});
-        m_enemies[i]->SetPosition({displacement, 0});
+        m_enemies[i]->SetPosition({displacement, 20});
         m_enemies[i]->SetSpeed(m_levelData.GetLevelData(level).enemySpeed);
 
-        m_enemies[i]->SetTrajectory(m_levelData.GetLevelData(0).trajectory);
+        m_enemies[i]->SetTrajectory(m_levelData.GetLevelData(level).trajectory);
 
         m_enemies[i]->SetPlayer(m_player);
     }
@@ -56,6 +58,17 @@ void LevelLoader::LoadLevel(int level)
     {
         m_player->SetEnemies(enemy);
     }
+}
+
+void LevelLoader::RestartLevel(int level)
+{   
+    m_gameOver = 0;
+
+    levelNum = 0;
+
+    currentLevel = 0;
+
+    LoadLevel(level);
 }
 
 void LevelLoader::UpdateEnemies(float dt)
@@ -115,8 +128,10 @@ void LevelLoader::UpdateEnemies(float dt)
         m_enemies[m_currentFiringEnemy]->SetSpeed(400);
     }
 
-    if (activeEnemies == 0)
+    if (activeEnemies == 0 && levelNum != -1)
     {
+        m_displayingReadyScreen = true;
+
         m_currentFiringEnemy = 0;
 
         levelNum++;
@@ -134,18 +149,38 @@ void LevelLoader::OnUpdate(float dt)
 
         if (levelNum > m_levelData.GetAllLevels().size() - 1)
         {
-            levelNum = 0;
-            return;
+            levelNum = -1;
+            m_gameOver = 1;
         }
 
-        LoadLevel(levelNum);
+        if (levelNum != -1)
+        {
+            LoadLevel(levelNum);
+        }
     }
 
-    m_player->OnUpdate(dt);
+    if (!m_player->GetActive())
+    {
+        m_gameOver = 2;
+    }
+    else
+    {
+        m_player->OnUpdate(dt);
+    }
 }
 
 void LevelLoader::OnInput(SDL_Event *event)
 {
+    if (event->key.key == SDLK_R && m_gameOver != 0)
+    {
+        RestartLevel(0);
+    }
+
+    if (event->key.key == SDLK_RETURN && m_displayingReadyScreen)
+    {
+        m_displayingReadyScreen = false;
+    }
+
     m_player->OnInput(event);
 }
 
@@ -157,4 +192,9 @@ void LevelLoader::OnRender(float alpha)
     }
 
     m_player->OnRender(alpha);
+
+    SDL_SetRenderDrawColor(m_renderer, 255, 255, 255, 255);
+
+    SDL_RenderDebugText(m_renderer, 0, 0, ("Level: " + std::to_string(levelNum)).c_str());
+    SDL_RenderDebugText(m_renderer, 0, 15, ("Lives: " + std::to_string(m_player->GetHealth())).c_str());
 }

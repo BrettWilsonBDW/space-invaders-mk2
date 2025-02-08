@@ -17,6 +17,9 @@ public:
 
     LevelLoader();
 
+    int GetGameOverState() { return m_gameOver; };
+    bool GetDisplayingReadyScreen() { return m_displayingReadyScreen; };
+
     void OnUpdate(float dt);
     void OnInput(SDL_Event *event);
     void OnRender(float alpha);
@@ -28,17 +31,22 @@ private:
     Player *m_player = nullptr;
     LevelData m_levelData{};
 
-    int m_currentFiringEnemy{0};
+    int m_currentFiringEnemy{};
     bool m_canFire{true};
 
     std::vector<Enemy *> m_enemies;
 
-    int levelNum{0};
-    int currentLevel{0};
+    int levelNum{};
+    int currentLevel{};
+
+    int m_gameOver{};
+
+    bool m_displayingReadyScreen{};
 
     void UpdateEnemies(float dt);
 
     void LoadLevel(int level);
+    void RestartLevel(int level);
 
     int GetWindowWidth()
     {

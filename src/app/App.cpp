@@ -25,12 +25,8 @@ extern "C"
             console.log('Checking rotation');
             if ($0 < $1) {
                 canvas.style.transform = 'rotate(90deg)';
-                // canvas.width = $1;  // Adjust canvas dimensions for the rotation
-                // canvas.height = $0;
             } else {
                 canvas.style.transform = 'rotate(0deg)';
-                // canvas.width = $0;
-                // canvas.height = $1;
             } }, width, height);
     }
 }
@@ -44,19 +40,19 @@ App::App()
         return;
     }
 
-    if (!SDL_CreateWindowAndRenderer("Space Invaders Clone MK2", 1920 / 2, 1080 / 2, SDL_WINDOW_RESIZABLE, &m_window, &m_renderer))
+    if (!SDL_CreateWindowAndRenderer("Space Invaders Clone MK2", 1920 / 2, 1080 / 2, 0, &m_window, &m_renderer))
     {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create window and renderer: %s", SDL_GetError());
         return;
     }
 
     SDL_SetWindowRelativeMouseMode(m_window, true);
-
-    m_game.Init(m_window, m_renderer);
-
+    
     m_utils.Init(m_window, m_renderer);
     m_utils.SetBaseWindowSize(1920 / 2, 1080 / 2);
     m_utils.GetScaleFactor();
+
+    m_game.Init(m_window, m_renderer);
 
     m_lastTime = SDL_GetPerformanceCounter();
     m_frequency = (float)SDL_GetPerformanceFrequency();

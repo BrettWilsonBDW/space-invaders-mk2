@@ -4,6 +4,8 @@
 
 Enemy::Enemy(SDL_Window *window, SDL_Renderer *renderer) : Entities(window, renderer)
 {
+    SetTexture("enemy1.png");
+
     for (int i = 0; i < 1; i++)
     {
         m_bullets.push_back(Bullet(window, renderer));
@@ -23,7 +25,6 @@ void Enemy::ShootBullets()
         for (auto &bullet : m_bullets)
         {
             bullet.SetActive(true);
-            m_bullets[0].SetPosition({GetRect().x + GetRect().w / 2, GetRect().y});
         }
     }
 
@@ -31,7 +32,7 @@ void Enemy::ShootBullets()
     {
         if (!bullet.GetActive())
         {
-            bullet.SetPosition({GetRect().x + GetRect().w / 2, GetRect().y});
+            bullet.SetPosition({(GetRect().x + GetRect().w / 2) / GetScaleFactor(), ((GetRect().y) + GetRect().h) / GetScaleFactor()});
         }
 
         if (bullet.CheckCollisions(bullet.GetRect(), m_player->GetRect()))

@@ -49,6 +49,15 @@ void Entities::RenderSprite(const Vector2 &position)
     destRect.w = m_OriginalRect.w * m_scaleFactor; // Width
     destRect.h = m_OriginalRect.h * m_scaleFactor; // Height
 
-    SDL_SetRenderDrawColor(m_renderer, 255, 0, 0, 255);
-    SDL_RenderRect(m_renderer, &destRect);
+    
+    if (m_texture == nullptr)
+    {
+        SDL_SetRenderDrawColor(m_renderer, 255, 0, 0, 255);
+        SDL_RenderRect(m_renderer, &destRect);
+    }
+    else
+    {
+        SDL_SetRenderDrawColor(m_renderer, 0, 0, 0, 0);
+        SDL_RenderTexture(m_renderer, m_texture, NULL, &destRect);
+    }
 }
